@@ -1,0 +1,769 @@
+{
+  "generated": "2026-11-22T15:54:06.916Z",
+  "datasets": [
+    {
+      "slug": "cosmic-cliffs-nircam",
+      "title": "Cosmic Cliffs",
+      "target": "NGC 3324, Carina Nebula",
+      "blurb": "The edge of a cavity carved into the Carina Nebula by the radiation of massive young stars, about 7,600 light-years away.",
+      "instrument": "NIRCam",
+      "programme": 2731,
+      "programme_title": "JWST Early Release Observation 5",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-06-03",
+      "esa_id": "weic2205a",
+      "esa_note": null,
+      "width": 2270,
+      "height": 1300,
+      "bytes": 1010438,
+      "filters": [
+        {
+          "name": "F090W",
+          "pivot_um": 0.901,
+          "file": "/lab/cosmic-cliffs-nircam/f090w.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_clear-f090w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.11,
+            "patches": 188,
+            "scale": 1.00029,
+            "rotation_deg": -0.001
+          }
+        },
+        {
+          "name": "F187N",
+          "pivot_um": 1.874,
+          "file": "/lab/cosmic-cliffs-nircam/f187n.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_clear-f187n",
+          "esa_color": "#2fd0ff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.12,
+            "patches": 194,
+            "scale": 1.00012,
+            "rotation_deg": 0.002
+          }
+        },
+        {
+          "name": "F200W",
+          "pivot_um": 1.99,
+          "file": "/lab/cosmic-cliffs-nircam/f200w.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_clear-f200w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F335M",
+          "pivot_um": 3.365,
+          "file": "/lab/cosmic-cliffs-nircam/f335m.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_clear-f335m",
+          "esa_color": "#ff9a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.09,
+            "patches": 235,
+            "scale": 1.0076,
+            "rotation_deg": 0.469
+          }
+        },
+        {
+          "name": "F444W",
+          "pivot_um": 4.421,
+          "file": "/lab/cosmic-cliffs-nircam/f444w.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_clear-f444w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.09,
+            "patches": 227,
+            "scale": 1.00752,
+            "rotation_deg": 0.469
+          }
+        },
+        {
+          "name": "F470N",
+          "pivot_um": 4.708,
+          "file": "/lab/cosmic-cliffs-nircam/f470n.webp",
+          "w": 2270,
+          "h": 1300,
+          "obs_id": "jw02731-o001_t017_nircam_f444w-f470n",
+          "esa_color": "#ffe04a",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.13,
+            "patches": 230,
+            "scale": 1.00813,
+            "rotation_deg": 0.47
+          }
+        }
+      ]
+    },
+    {
+      "slug": "cosmic-cliffs-miri",
+      "title": "Cosmic Cliffs · mid-infrared",
+      "target": "NGC 3324, Carina Nebula",
+      "blurb": "The same ridge in mid-infrared: stars fade away and the dust itself glows.",
+      "instrument": "MIRI",
+      "programme": 2731,
+      "programme_title": "JWST Early Release Observation 5",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-06-11",
+      "esa_id": "weic2205b",
+      "esa_note": "MIRI colours from ESA's combined NIRCam + MIRI release",
+      "width": 1990,
+      "height": 737,
+      "bytes": 257468,
+      "filters": [
+        {
+          "name": "F770W",
+          "pivot_um": 7.639,
+          "file": "/lab/cosmic-cliffs-miri/f770w.webp",
+          "w": 1990,
+          "h": 737,
+          "obs_id": "jw02731-o002_t017_miri_f770w",
+          "esa_color": "#9b6bff",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F1130W",
+          "pivot_um": 11.309,
+          "file": "/lab/cosmic-cliffs-miri/f1130w.webp",
+          "w": 1990,
+          "h": 737,
+          "obs_id": "jw02731-o002_t017_miri_f1130w",
+          "esa_color": "#2fd0ff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.37,
+            "patches": 135,
+            "scale": 1.00026,
+            "rotation_deg": 0.001
+          }
+        },
+        {
+          "name": "F1280W",
+          "pivot_um": 12.81,
+          "file": "/lab/cosmic-cliffs-miri/f1280w.webp",
+          "w": 1990,
+          "h": 737,
+          "obs_id": "jw02731-o002_t017_miri_f1280w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.36,
+            "patches": 134,
+            "scale": 1.00016,
+            "rotation_deg": 0.003
+          }
+        },
+        {
+          "name": "F1800W",
+          "pivot_um": 17.984,
+          "file": "/lab/cosmic-cliffs-miri/f1800w.webp",
+          "w": 1990,
+          "h": 737,
+          "obs_id": "jw02731-o002_t017_miri_f1800w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.34,
+            "patches": 47,
+            "scale": 0.99998,
+            "rotation_deg": 0.003
+          }
+        }
+      ]
+    },
+    {
+      "slug": "pillars-nircam",
+      "title": "Pillars of Creation",
+      "target": "M16, Eagle Nebula",
+      "blurb": "Columns of cold gas and dust a few light-years tall, being eroded by nearby massive stars, about 6,500 light-years away.",
+      "instrument": "NIRCam",
+      "programme": 2739,
+      "programme_title": "JWST Cycle 1 Outreach Campaign",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-08-14",
+      "esa_id": "weic2216b",
+      "esa_note": null,
+      "width": 2266,
+      "height": 1296,
+      "bytes": 1580792,
+      "filters": [
+        {
+          "name": "F090W",
+          "pivot_um": 0.901,
+          "file": "/lab/pillars-nircam/f090w.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_clear-f090w",
+          "esa_color": "#9b6bff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.16,
+            "patches": 63,
+            "scale": 1.00031,
+            "rotation_deg": -0.001
+          }
+        },
+        {
+          "name": "F187N",
+          "pivot_um": 1.874,
+          "file": "/lab/pillars-nircam/f187n.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_clear-f187n",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.07,
+            "patches": 113,
+            "scale": 1.00034,
+            "rotation_deg": 0
+          }
+        },
+        {
+          "name": "F200W",
+          "pivot_um": 1.99,
+          "file": "/lab/pillars-nircam/f200w.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_clear-f200w",
+          "esa_color": "#2fd0ff",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F335M",
+          "pivot_um": 3.365,
+          "file": "/lab/pillars-nircam/f335m.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_clear-f335m",
+          "esa_color": "#ffe04a",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.11,
+            "patches": 151,
+            "scale": 1.00779,
+            "rotation_deg": 0.488
+          }
+        },
+        {
+          "name": "F444W",
+          "pivot_um": 4.421,
+          "file": "/lab/pillars-nircam/f444w.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_clear-f444w",
+          "esa_color": "#ff9a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.11,
+            "patches": 128,
+            "scale": 1.00778,
+            "rotation_deg": 0.486
+          }
+        },
+        {
+          "name": "F470N",
+          "pivot_um": 4.708,
+          "file": "/lab/pillars-nircam/f470n.webp",
+          "w": 2266,
+          "h": 1296,
+          "obs_id": "jw02739-o001_t001_nircam_f444w-f470n",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.08,
+            "patches": 154,
+            "scale": 1.0082,
+            "rotation_deg": 0.485
+          }
+        }
+      ]
+    },
+    {
+      "slug": "pillars-miri",
+      "title": "Pillars of Creation · mid-infrared",
+      "target": "M16, Eagle Nebula",
+      "blurb": "In mid-infrared, the stars almost disappear; what remains is dust, glowing faintly.",
+      "instrument": "MIRI",
+      "programme": 2739,
+      "programme_title": "JWST Cycle 1 Outreach Campaign",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-08-30",
+      "esa_id": "weic2218a",
+      "esa_note": null,
+      "width": 1765,
+      "height": 1940,
+      "bytes": 301068,
+      "filters": [
+        {
+          "name": "F770W",
+          "pivot_um": 7.639,
+          "file": "/lab/pillars-miri/f770w.webp",
+          "w": 1765,
+          "h": 1940,
+          "obs_id": "jw02739-o002_t001_miri_f770w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F1130W",
+          "pivot_um": 11.309,
+          "file": "/lab/pillars-miri/f1130w.webp",
+          "w": 1765,
+          "h": 1940,
+          "obs_id": "jw02739-o002_t001_miri_f1130w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.48,
+            "patches": 150,
+            "scale": 1.0001,
+            "rotation_deg": -0.004
+          }
+        },
+        {
+          "name": "F1500W",
+          "pivot_um": 15.064,
+          "file": "/lab/pillars-miri/f1500w.webp",
+          "w": 1765,
+          "h": 1940,
+          "obs_id": "jw02739-o002_t001_miri_f1500w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.38,
+            "patches": 16,
+            "scale": 1.00006,
+            "rotation_deg": -0.013
+          }
+        }
+      ]
+    },
+    {
+      "slug": "southern-ring-nircam",
+      "title": "Southern Ring Nebula",
+      "target": "NGC 3132",
+      "blurb": "A dying star's ejected shells, ~2,500 light-years away. Narrow filters isolate ionised and molecular gas.",
+      "instrument": "NIRCam",
+      "programme": 2733,
+      "programme_title": "JWST Early Release Observation 7",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-06-03",
+      "esa_id": "weic2207b",
+      "esa_note": null,
+      "width": 2227,
+      "height": 2254,
+      "bytes": 558696,
+      "filters": [
+        {
+          "name": "F090W",
+          "pivot_um": 0.901,
+          "file": "/lab/southern-ring-nircam/f090w.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_clear-f090w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.29,
+            "patches": 58,
+            "scale": 0.99989,
+            "rotation_deg": -0.004
+          }
+        },
+        {
+          "name": "F187N",
+          "pivot_um": 1.874,
+          "file": "/lab/southern-ring-nircam/f187n.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_clear-f187n",
+          "esa_color": "#2fd0ff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.27,
+            "patches": 98,
+            "scale": 0.99977,
+            "rotation_deg": -0.002
+          }
+        },
+        {
+          "name": "F212N",
+          "pivot_um": 2.12,
+          "file": "/lab/southern-ring-nircam/f212n.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_clear-f212n",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F356W",
+          "pivot_um": 3.563,
+          "file": "/lab/southern-ring-nircam/f356w.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_clear-f356w",
+          "esa_color": "#ffe04a",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.39,
+            "patches": 190,
+            "scale": 1.01807,
+            "rotation_deg": -0.312
+          }
+        },
+        {
+          "name": "F405N",
+          "pivot_um": 4.052,
+          "file": "/lab/southern-ring-nircam/f405n.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_f405n-f444w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.22,
+            "patches": 33,
+            "scale": 1.01761,
+            "rotation_deg": -0.309
+          }
+        },
+        {
+          "name": "F470N",
+          "pivot_um": 4.708,
+          "file": "/lab/southern-ring-nircam/f470n.webp",
+          "w": 2227,
+          "h": 2254,
+          "obs_id": "jw02733-o001_t001_nircam_f444w-f470n",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.42,
+            "patches": 239,
+            "scale": 1.01776,
+            "rotation_deg": -0.306
+          }
+        }
+      ]
+    },
+    {
+      "slug": "southern-ring-miri",
+      "title": "Southern Ring · mid-infrared",
+      "target": "NGC 3132",
+      "blurb": "MIRI reveals the second, dust-shrouded star at the heart of the nebula.",
+      "instrument": "MIRI",
+      "programme": 2733,
+      "programme_title": "JWST Early Release Observation 7",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-06-12",
+      "esa_id": "weic2207c",
+      "esa_note": null,
+      "width": 1280,
+      "height": 1009,
+      "bytes": 91478,
+      "filters": [
+        {
+          "name": "F770W",
+          "pivot_um": 7.639,
+          "file": "/lab/southern-ring-miri/f770w.webp",
+          "w": 1280,
+          "h": 1009,
+          "obs_id": "jw02733-o002_t001_miri_f770w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F1130W",
+          "pivot_um": 11.309,
+          "file": "/lab/southern-ring-miri/f1130w.webp",
+          "w": 1280,
+          "h": 1009,
+          "obs_id": "jw02733-o002_t001_miri_f1130w",
+          "esa_color": "#2fd0ff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.47,
+            "patches": 29,
+            "scale": 1.00095,
+            "rotation_deg": -0.004
+          }
+        },
+        {
+          "name": "F1280W",
+          "pivot_um": 12.81,
+          "file": "/lab/southern-ring-miri/f1280w.webp",
+          "w": 1280,
+          "h": 1009,
+          "obs_id": "jw02733-o002_t001_miri_f1280w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.56,
+            "patches": 17,
+            "scale": 1.00049,
+            "rotation_deg": -0.013
+          }
+        },
+        {
+          "name": "F1800W",
+          "pivot_um": 17.984,
+          "file": "/lab/southern-ring-miri/f1800w.webp",
+          "w": 1280,
+          "h": 1009,
+          "obs_id": "jw02733-o002_t001_miri_f1800w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.48,
+            "patches": 7,
+            "scale": 1.00019,
+            "rotation_deg": -0.011
+          }
+        }
+      ]
+    },
+    {
+      "slug": "smacs-0723-nircam",
+      "title": "Webb's First Deep Field",
+      "target": "Galaxy cluster SMACS J0723.3−7327",
+      "blurb": "A galaxy cluster 4.2 billion light-years away, magnifying galaxies far behind it through gravitational lensing.",
+      "instrument": "NIRCam",
+      "programme": 2736,
+      "programme_title": "JWST Early Release Observation 10",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-06-07",
+      "esa_id": "weic2209a",
+      "esa_note": null,
+      "width": 2406,
+      "height": 2425,
+      "bytes": 648106,
+      "filters": [
+        {
+          "name": "F090W",
+          "pivot_um": 0.901,
+          "file": "/lab/smacs-0723-nircam/f090w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f090w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.29,
+            "patches": 242,
+            "scale": 1.00046,
+            "rotation_deg": -0.001
+          }
+        },
+        {
+          "name": "F150W",
+          "pivot_um": 1.501,
+          "file": "/lab/smacs-0723-nircam/f150w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f150w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.27,
+            "patches": 335,
+            "scale": 1.0004,
+            "rotation_deg": 0
+          }
+        },
+        {
+          "name": "F200W",
+          "pivot_um": 1.99,
+          "file": "/lab/smacs-0723-nircam/f200w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f200w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F277W",
+          "pivot_um": 2.786,
+          "file": "/lab/smacs-0723-nircam/f277w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f277w",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.31,
+            "patches": 253,
+            "scale": 1.00783,
+            "rotation_deg": 0.446
+          }
+        },
+        {
+          "name": "F356W",
+          "pivot_um": 3.563,
+          "file": "/lab/smacs-0723-nircam/f356w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f356w",
+          "esa_color": "#ff9a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.34,
+            "patches": 188,
+            "scale": 1.00782,
+            "rotation_deg": 0.445
+          }
+        },
+        {
+          "name": "F444W",
+          "pivot_um": 4.421,
+          "file": "/lab/smacs-0723-nircam/f444w.webp",
+          "w": 2406,
+          "h": 2425,
+          "obs_id": "jw02736-o001_t001_nircam_clear-f444w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.33,
+            "patches": 156,
+            "scale": 1.00797,
+            "rotation_deg": 0.445
+          }
+        }
+      ]
+    },
+    {
+      "slug": "l1527-nircam",
+      "title": "Protostar L1527",
+      "target": "LDN 1527, Taurus",
+      "blurb": "An hourglass of gas lit by a protostar only ~100,000 years old, hidden inside the dark disc at its waist, about 460 light-years away.",
+      "instrument": "NIRCam",
+      "programme": 2739,
+      "programme_title": "JWST Cycle 1 Outreach Campaign",
+      "pi": "Pontoppidan, Klaus M.",
+      "observed": "2022-09-08",
+      "esa_id": "weic2219a",
+      "esa_note": null,
+      "width": 2146,
+      "height": 2247,
+      "bytes": 1635278,
+      "filters": [
+        {
+          "name": "F115W",
+          "pivot_um": 1.154,
+          "file": "/lab/l1527-nircam/f115w.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_clear-f115w",
+          "esa_color": null,
+          "registration": {
+            "method": "reference"
+          }
+        },
+        {
+          "name": "F187N",
+          "pivot_um": 1.874,
+          "file": "/lab/l1527-nircam/f187n.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_clear-f187n",
+          "esa_color": null,
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.37,
+            "patches": 25,
+            "scale": 0.99978,
+            "rotation_deg": 0.007
+          }
+        },
+        {
+          "name": "F200W",
+          "pivot_um": 1.99,
+          "file": "/lab/l1527-nircam/f200w.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_clear-f200w",
+          "esa_color": "#3d6dff",
+          "registration": {
+            "method": "native-grid"
+          }
+        },
+        {
+          "name": "F335M",
+          "pivot_um": 3.365,
+          "file": "/lab/l1527-nircam/f335m.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_clear-f335m",
+          "esa_color": "#3dfa7c",
+          "registration": {
+            "method": "seeded",
+            "rms_px": null,
+            "patches": 0,
+            "scale": 1.01805,
+            "rotation_deg": -0.315
+          }
+        },
+        {
+          "name": "F444W",
+          "pivot_um": 4.421,
+          "file": "/lab/l1527-nircam/f444w.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_clear-f444w",
+          "esa_color": "#ff3a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.25,
+            "patches": 16,
+            "scale": 1.01805,
+            "rotation_deg": -0.315
+          }
+        },
+        {
+          "name": "F470N",
+          "pivot_um": 4.708,
+          "file": "/lab/l1527-nircam/f470n.webp",
+          "w": 2146,
+          "h": 2247,
+          "obs_id": "jw02739-o005_t004_nircam_f444w-f470n",
+          "esa_color": "#ff9a2e",
+          "registration": {
+            "method": "matched",
+            "rms_px": 0.26,
+            "patches": 16,
+            "scale": 1.0176,
+            "rotation_deg": -0.317
+          }
+        }
+      ]
+    }
+  ]
+}
