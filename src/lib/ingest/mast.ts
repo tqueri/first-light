@@ -4,7 +4,11 @@
  * Used by `pnpm ingest:mast` (full, resumable backfill) and by the Vercel cron
  * route (incremental: only products released since the last run).
  */
-import type { Pool, PoolClient } from "pg";
+import type { PrismaClient } from "@/generated/prisma/client";
+
+type Tx = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
+/** Big upserts and the sky-cell rebuild run far longer than Prisma's 5 s transaction default. */
+const TX = { timeout: 300_000, maxWait: 30_000 };
 
 const MAST = "https://mast.stsci.edu/api/v0/invoke";
 const PAGE = 50_000;
@@ -90,7 +94,7 @@ async function mastFiltered(type: ProductType, mjdStart: number, mjdEnd: number,
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-async function upsert(client: PoolClient, allRows: MastRow[]) {
+async function upsert(tx: Tx, allRows: MastRow[]) {
   // MAST occasionally returns the same product twice in one page.
   const rows = [...new Map(allRows.map((r) => [String(r.obsid), r])).values()];
   const CHUNK = 1_500;
@@ -130,7 +134,9 @@ async function upsert(client: PoolClient, allRows: MastRow[]) {
       cols.jpeg_url.push(r.jpegURL);
       cols.moving.push(Boolean(r.mtFlag));
     }
-    await client.query(
+    // One statement per chunk (unnest of column arrays): createMany can't update on conflict,
+    // and 1,500 row-by-row upserts per chunk would be far slower.
+    await tx.$executeRawUnsafe(
       `insert into products (obsid, obs_id, target_name, target_class, ra, dec, instrument, filters, product_type,
          t_min, t_max, exptime, release_mjd, proposal_id, proposal_pi, proposal_type, title, em_min, em_max, jpeg_url, moving)
        select * from unnest($1::bigint[], $2::text[], $3::text[], $4::text[], $5::float8[], $6::float8[], $7::text[],
@@ -144,14 +150,14 @@ async function upsert(client: PoolClient, allRows: MastRow[]) {
          proposal_pi = excluded.proposal_pi, proposal_type = excluded.proposal_type, title = excluded.title,
          em_min = excluded.em_min, em_max = excluded.em_max, jpeg_url = excluded.jpeg_url, moving = excluded.moving,
          ingested_at = now()`,
-      Object.values(cols),
+      ...Object.values(cols),
     );
   }
 }
 
 /** Ingest one release window; splits itself if MAST reports more rows than a page holds. */
 async function ingestWindow(
-  pool: Pool,
+  db: PrismaClient,
   type: ProductType,
   start: number,
   end: number,
@@ -161,31 +167,24 @@ async function ingestWindow(
   if (first.paging.rowsFiltered > PAGE) {
     const mid = (start + end) / 2;
     log(`  ${type} ${fmt(start)}→${fmt(end)}: ${first.paging.rowsFiltered} rows, splitting`);
-    return (await ingestWindow(pool, type, start, mid, log)) + (await ingestWindow(pool, type, mid, end, log));
+    return (await ingestWindow(db, type, start, mid, log)) + (await ingestWindow(db, type, mid, end, log));
   }
-  const client = await pool.connect();
-  try {
-    await client.query("begin");
-    await upsert(client, first.data);
-    await client.query(
-      `insert into ingest_windows (product_type, mjd_start, mjd_end, rows) values ($1, $2, $3, $4)
-       on conflict (product_type, mjd_start, mjd_end) do update set rows = excluded.rows, completed_at = now()`,
-      [type, start, end, first.data.length],
-    );
-    await client.query("commit");
-  } catch (e) {
-    await client.query("rollback");
-    throw e;
-  } finally {
-    client.release();
-  }
+  await db.$transaction(async (tx) => {
+    await upsert(tx, first.data);
+    const key = { product_type: type, mjd_start: start, mjd_end: end };
+    await tx.ingestWindow.upsert({
+      where: { product_type_mjd_start_mjd_end: key },
+      create: { ...key, rows: first.data.length },
+      update: { rows: first.data.length, completed_at: new Date() },
+    });
+  }, TX);
   return first.data.length;
 }
 
 const fmt = (mjd: number) => mjdToDate(mjd).toISOString().slice(0, 10);
 
 /** Full backfill in monthly release windows. Completed windows are skipped unless they are recent. */
-export async function backfill(pool: Pool, log: (s: string) => void = console.log) {
+export async function backfill(db: PrismaClient, log: (s: string) => void = console.log) {
   const now = mjdNow();
   const windows: [number, number][] = [];
   // First science data became public in July 2022; commissioning data slightly earlier.
@@ -195,18 +194,16 @@ export async function backfill(pool: Pool, log: (s: string) => void = console.lo
     d = next;
   }
   const done = new Set(
-    (
-      await pool.query<{ k: string }>(
-        `select product_type || ':' || mjd_start || ':' || mjd_end as k from ingest_windows`,
-      )
-    ).rows.map((r) => r.k),
+    (await db.ingestWindow.findMany({ select: { product_type: true, mjd_start: true, mjd_end: true } })).map(
+      (w) => `${w.product_type}:${w.mjd_start}:${w.mjd_end}`,
+    ),
   );
   let total = 0;
   for (const type of PRODUCT_TYPES) {
     for (const [s, e] of windows) {
       const recent = e > now - 45;
       if (!recent && done.has(`${type}:${s}:${e}`)) continue;
-      const n = await ingestWindow(pool, type, s, e, log);
+      const n = await ingestWindow(db, type, s, e, log);
       total += n;
       log(`  ${type.padEnd(10)} ${fmt(s)} → ${fmt(e)}  ${String(n).padStart(6)} rows`);
     }
@@ -215,11 +212,11 @@ export async function backfill(pool: Pool, log: (s: string) => void = console.lo
 }
 
 /** Incremental: everything released in the last `days` days (cheap; for the cron). */
-export async function incremental(pool: Pool, days = 10, log: (s: string) => void = console.log) {
+export async function incremental(db: PrismaClient, days = 10, log: (s: string) => void = console.log) {
   const now = mjdNow();
   let total = 0;
   for (const type of PRODUCT_TYPES) {
-    const n = await ingestWindow(pool, type, now - days, now + 1, log);
+    const n = await ingestWindow(db, type, now - days, now + 1, log);
     total += n;
     log(`  ${type.padEnd(10)} last ${days}d  ${n} rows`);
   }
@@ -227,12 +224,11 @@ export async function incremental(pool: Pool, days = 10, log: (s: string) => voi
 }
 
 /** Rebuild the ~0.2° sky aggregation used by the sky map. */
-export async function rebuildSkyCells(pool: Pool) {
-  const client = await pool.connect();
-  try {
-    await client.query("begin");
-    await client.query("delete from sky_cells");
-    await client.query(`
+export async function rebuildSkyCells(db: PrismaClient) {
+  await db.$transaction(async (tx) => {
+    await tx.skyCell.deleteMany();
+    // Spherical binning + circular mean of RA + mode(): an aggregation the query builder can't express.
+    await tx.$executeRawUnsafe(`
       insert into sky_cells (id, ra, dec, n_products, n_image, n_spectrum, n_cube, n_timeseries, inst_mask,
                              first_mjd, last_mjd, n_programs, target, dec_bin, ra_bin)
       with b as (
@@ -259,11 +255,5 @@ export async function rebuildSkyCells(pool: Pool) {
         dec_bin, ra_bin
       from c group by dec_bin, ra_bin
     `);
-    await client.query("commit");
-  } catch (e) {
-    await client.query("rollback");
-    throw e;
-  } finally {
-    client.release();
-  }
+  }, TX);
 }

@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { sql } from "./db";
+import { db, sql } from "./db";
 import type { ArchiveImage, GalleryImage } from "./data";
 
 type Row = GalleryImage & { release_date: Date | string | null };
@@ -35,8 +35,8 @@ export async function getImagesByIds(ids: string[]): Promise<GalleryImage[]> {
   "use cache";
   cacheLife("days");
   cacheTag("gallery");
-  const rows = await sql<Row>(`select * from gallery_images where id = any($1)`, [ids]);
-  return rows.map(norm);
+  const rows = await db().galleryImage.findMany({ where: { id: { in: ids } } });
+  return rows.map((r) => norm(r as unknown as Row));
 }
 
 /**

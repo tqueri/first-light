@@ -18,13 +18,21 @@ Next.js 16 (App Router, Cache Components) · React 19 · Tailwind 4 · Postgres 
 ## Run it locally
 
 ```bash
-pnpm install
-pnpm dev            # boots an embedded Postgres 18 in ./.data/pg, applies db/schema.sql, starts Next on :3000
-pnpm ingest         # in another terminal, first run only (~20 min): ESA gallery, exoplanet spectra, full MAST backfill
+cp .env.example .env   # POSTGRES_URL defaults to the local embedded Postgres
+pnpm install           # also runs `prisma generate` (client in src/generated/prisma)
+pnpm dev               # boots an embedded Postgres 18 in ./.data/pg, applies Prisma migrations, starts Next on :3000
+pnpm ingest            # in another terminal, first run only (~20 min): ESA gallery, exoplanet spectra, full MAST backfill
 ```
 
+**Database = Prisma ORM 7 + Postgres.** The schema lives in `prisma/schema.prisma` and migrations in `prisma/migrations`;
+`src/lib/db.ts` exposes the Prisma client (`@prisma/adapter-pg`). Simple reads and every write use the typed client; the
+analytical queries (sky binning, angular separations, percentiles, findings) are hand-written SQL run through Prisma
+(`sql()` → `$queryRawUnsafe`, always parameterised).
+
 No database setup is needed locally: `scripts/with-db.mts` starts [`embedded-postgres`](https://github.com/leinelissen/embedded-postgres)
-(UTF-8, port 54329) unless `DATABASE_URL` is set. Concurrent commands reuse the running instance.
+(UTF-8, UTC, port 54329) when `POSTGRES_URL` points at it, then runs `prisma migrate deploy`. Any other `POSTGRES_URL` is used as-is.
+Concurrent commands reuse the running instance. Sessions must run in UTC (Prisma's pg adapter drops time-zone offsets);
+migration `2_utc_timezone` pins that on the database.
 
 Other scripts:
 
@@ -36,16 +44,20 @@ Other scripts:
 | `pnpm lab:build` | Rebuild the Lab's aligned WebP layers in `public/lab` from MAST previews |
 | `npx tsx scripts/build-sky-assets.mts` | Rebuild `public/sky/*.json` (stars, constellations) |
 | `pnpm build:local` | Production build against the local database |
-| `pnpm db` | Just run the embedded Postgres |
+| `pnpm db` | Just run the embedded Postgres (and apply migrations) |
+| `pnpm db:studio` | Prisma Studio: browse and edit the tables in the browser |
+| `pnpm db:migrate` | After editing `prisma/schema.prisma`: create and apply a new migration (`prisma migrate dev`) |
 
 ## Deploy on Vercel
 
-1. **Database.** Add a Postgres from the Vercel Marketplace (e.g. Neon). `DATABASE_URL` is the only seam the app uses.
-2. **Seed it once from your machine:** `DATABASE_URL="postgres://…" pnpm ingest`. `with-db` applies the schema to the remote database first.
-3. **Env vars:** `DATABASE_URL`, `CRON_SECRET` (any long random string), optionally `NEXT_PUBLIC_SITE_URL`.
-4. **Deploy.** `vercel.ts` registers a daily cron on `/api/cron/refresh`. It pulls newly public MAST products and new ESA images, and pulls exoplanet spectra on Mondays. Then it revalidates the `mast` / `gallery` / `exo` cache tags.
+1. **Database.** Add a Postgres from the Vercel Marketplace (Neon or Prisma Postgres). The app reads `POSTGRES_URL`
+   (migrations prefer `POSTGRES_URL_NON_POOLING` when the integration provides it). About 120 MB once seeded.
+2. **Seed it once from your machine:** `POSTGRES_URL="postgres://…" pnpm ingest`. `with-db` applies the Prisma migrations to the remote database first.
+3. **Env vars:** `POSTGRES_URL`, `CRON_SECRET` (any long random string), optionally `NEXT_PUBLIC_SITE_URL`.
+4. **Deploy.** `vercel.ts` pins pnpm 11 for install/build (Vercel would otherwise pick pnpm 9/10 from the lockfile) and registers a daily cron on `/api/cron/refresh`. It pulls newly public MAST products and new ESA images, and pulls exoplanet spectra on Mondays. Then it revalidates the `mast` / `gallery` / `exo` cache tags.
 
-Pages are prerendered at build time from the database (`"use cache"` + `cacheLife`), so the database must be reachable during `next build`.
+`pnpm build` runs `prisma generate && prisma migrate deploy && next build`. Pages are prerendered at build time from the database
+(`"use cache"` + `cacheLife`), so the database must be reachable, and seeded, during the build.
 Remote images (ESA CDN, MAST previews) go through `next/image`; source images count toward Vercel's image-optimisation usage.
 
 ## Data, credits & licences
@@ -61,7 +73,9 @@ Not affiliated with NASA, ESA, CSA or STScI.
 ## Layout
 
 ```
-db/schema.sql               idempotent schema (applied on every with-db boot)
+prisma/schema.prisma        database schema (Prisma ORM 7); prisma/migrations = migration history
+prisma.config.ts            Prisma CLI config (loads .env / .env.local, POSTGRES_URL)
+src/lib/db.ts               Prisma client + sql() helper for hand-written analytical SQL
 scripts/                    with-db, ingest-*, build-lab, build-sky-assets
 src/lib/ingest/             mast.ts · esa.ts · exo.ts   (shared by scripts and the cron route)
 src/lib/data*.ts            cached queries ("use cache", cacheTag mast|gallery|exo)

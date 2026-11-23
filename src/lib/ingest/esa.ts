@@ -3,6 +3,7 @@
  * Pulls ESA's own curated "Top 100" list and each image's metadata page.
  */
 import { parse, type HTMLElement } from "node-html-parser";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 const BASE = "https://esawebb.org";
 const UA = "FirstLight-WebbExplorer/1.0 (educational, non-commercial)";
@@ -194,4 +195,33 @@ export async function fetchImage(id: string, rank: number): Promise<EsaImage> {
     orientation: row("Orientation"),
     filters,
   };
+}
+
+/** Store one scraped image. `overwrite: false` keeps an existing row untouched (the cron only adds new images). */
+export async function saveGalleryImage(db: PrismaClient, img: EsaImage, { overwrite = true } = {}) {
+  const data = {
+    rank: img.rank,
+    title: img.title,
+    description: img.description,
+    credit: img.credit,
+    release_date: img.releaseDate ? new Date(img.releaseDate) : null,
+    width: img.width,
+    height: img.height,
+    object_names: img.objectNames,
+    distance: img.distance,
+    constellation: img.constellation,
+    categories: img.categories,
+    ra_hms: img.raHms,
+    dec_dms: img.decDms,
+    ra_deg: img.raDeg,
+    dec_deg: img.decDeg,
+    fov: img.fov,
+    orientation: img.orientation,
+    filters: img.filters,
+  };
+  await db.galleryImage.upsert({
+    where: { id: img.id },
+    create: { id: img.id, ...data },
+    update: overwrite ? { ...data, ingested_at: new Date() } : {},
+  });
 }

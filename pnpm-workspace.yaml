@@ -1,6 +1,14 @@
 allowBuilds:
   sharp: true
   unrs-resolver: false
-  "@embedded-postgres/windows-x64": true
-  embedded-postgres: true
   esbuild: true
+  prisma: true
+  "@prisma/engines": true
+  embedded-postgres: true
+  # embedded-postgres ships one binary package per platform; each needs its postinstall
+  # (Windows locally, linux-x64 on Vercel's build machines, macOS/arm for other dev machines)
+  "@embedded-postgres/windows-x64": true
+  "@embedded-postgres/linux-x64": true
+  "@embedded-postgres/linux-arm64": true
+  "@embedded-postgres/darwin-arm64": true
+  "@embedded-postgres/darwin-x64": true

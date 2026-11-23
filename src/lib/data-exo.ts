@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { sql } from "./db";
+import { db, sql } from "./db";
 
 export type ExoPoint = [number, number, number | null, number | null, number | null];
 
@@ -80,9 +80,6 @@ export function scaleHeight(p: Pick<ExoPlanet, "radius_re" | "mass_me" | "eq_tem
   return { km: H / 1000, ppm };
 }
 
-const META_COLS = `id, planet, spec_type, instrument, authors, reference, bibcode, note, min_wl, max_wl, n_points,
-  value_unit, value_kind, derived`;
-
 function withInst<T extends { instrument: string | null }>(r: T) {
   const { key, mode } = exoInstrument(r.instrument);
   return { ...r, inst_key: key, mode };
@@ -151,9 +148,14 @@ export async function getExoSpectra(planet: string): Promise<ExoSpectrum[]> {
   "use cache";
   cacheLife("days");
   cacheTag("exo");
-  const rows = await sql<Omit<ExoSpectrum, "inst_key" | "mode">>(
-    `select ${META_COLS}, points from exo_spectra where planet = $1 order by spec_type desc, n_points desc`,
-    [planet],
-  );
-  return rows.map(withInst);
+  const rows = await db().exoSpectrum.findMany({
+    where: { planet },
+    select: {
+      id: true, planet: true, spec_type: true, instrument: true, authors: true, reference: true, bibcode: true,
+      note: true, min_wl: true, max_wl: true, n_points: true, value_unit: true, value_kind: true, derived: true,
+      points: true,
+    },
+    orderBy: [{ spec_type: "desc" }, { n_points: "desc" }],
+  });
+  return (rows as Omit<ExoSpectrum, "inst_key" | "mode">[]).map(withInst);
 }

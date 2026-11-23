@@ -1,0 +1,171 @@
+// First Light: database schema (Prisma owns it; migrations live in prisma/migrations).
+// Field names stay snake_case so they match the columns used by the analytical SQL in src/lib.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// One row per public, calibrated (level 3) JWST science product from MAST/CAOM.
+/// A product is not an "observation": NIRSpec MOS yields one spectrum per source,
+/// NIRCam one mosaic per filter, etc.
+model Product {
+  obsid         BigInt   @id
+  obs_id        String
+  target_name   String?
+  target_class  String?
+  ra            Float?
+  dec           Float?
+  instrument    String?
+  filters       String?
+  /// image | spectrum | cube | timeseries
+  product_type  String
+  /// MJD, start of first exposure
+  t_min         Float?
+  t_max         Float?
+  /// seconds (product-level; do not sum across products)
+  exptime       Float?
+  /// MJD the data became public
+  release_mjd   Float?
+  proposal_id   Int?
+  proposal_pi   String?
+  proposal_type String?
+  title         String?
+  /// nm
+  em_min        Float?
+  em_max        Float?
+  /// MAST URI of the preview JPEG (images only)
+  jpeg_url      String?
+  moving        Boolean  @default(false)
+  ingested_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([proposal_id], map: "products_proposal_idx")
+  @@index([t_min(sort: Desc)], map: "products_tmin_idx")
+  @@index([release_mjd(sort: Desc)], map: "products_release_idx")
+  @@index([product_type], map: "products_type_idx")
+  @@map("products")
+}
+
+/// Resumable backfill bookkeeping: one row per (release window, product type).
+model IngestWindow {
+  product_type String
+  mjd_start    Float
+  mjd_end      Float
+  rows         Int
+  completed_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([product_type, mjd_start, mjd_end])
+  @@map("ingest_windows")
+}
+
+model IngestRun {
+  id          Int       @id @default(autoincrement())
+  source      String
+  started_at  DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at DateTime? @db.Timestamptz(6)
+  rows        Int?
+  note        String?
+
+  @@map("ingest_runs")
+}
+
+/// Sky aggregation (~0.2° cells), rebuilt after each ingest. Fixed targets only.
+model SkyCell {
+  id           Int     @id
+  ra           Float
+  dec          Float
+  n_products   Int
+  n_image      Int
+  n_spectrum   Int
+  n_cube       Int
+  n_timeseries Int
+  /// 1 NIRCam, 2 NIRSpec, 4 MIRI, 8 NIRISS, 16 FGS
+  inst_mask    Int
+  first_mjd    Float?
+  last_mjd     Float?
+  n_programs   Int
+  target       String?
+  dec_bin      Int
+  ra_bin       Int
+
+  @@map("sky_cells")
+}
+
+/// ESA/Webb curated images (CC BY 4.0), the "Top 100".
+model GalleryImage {
+  /// e.g. weic2205a
+  id            String    @id
+  /// order in ESA's Top 100 list
+  rank          Int?
+  title         String
+  description   String[]  @default([])
+  credit        String?
+  release_date  DateTime? @db.Timestamptz(6)
+  width         Int?
+  height        Int?
+  object_names  String[]  @default([])
+  distance      String?
+  constellation String?
+  categories    String[]  @default([])
+  ra_hms        String?
+  dec_dms       String?
+  ra_deg        Float?
+  dec_deg       Float?
+  fov           String?
+  orientation   String?
+  /// [{ name, color, instrument, … }]
+  filters       Json      @default("[]")
+  ingested_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("gallery_images")
+}
+
+/// NASA Exoplanet Archive: JWST atmospheric spectra.
+model ExoSpectrum {
+  /// spec_path
+  id          String   @id
+  planet      String
+  /// Transmission | Eclipse | Direct Imaging
+  spec_type   String
+  instrument  String?
+  authors     String?
+  bibcode     String?
+  note        String?
+  min_wl      Float?
+  max_wl      Float?
+  /// [[wl_um, value, err_plus, err_minus, halfwidth], ...]
+  points      Json?
+  value_unit  String?
+  ingested_at DateTime @default(now()) @db.Timestamptz(6)
+  n_points    Int?
+  /// REFERENCE header of the file
+  reference   String?
+  /// transit_depth | eclipse_depth | brightness_temp
+  value_kind  String?
+  /// depth computed from Rp/Rs
+  derived     Boolean  @default(false)
+
+  @@index([planet], map: "exo_planet_idx")
+  @@map("exo_spectra")
+}
+
+model ExoPlanet {
+  name          String  @id
+  host          String?
+  radius_re     Float?
+  mass_me       Float?
+  period_days   Float?
+  eq_temp_k     Float?
+  distance_pc   Float?
+  disc_year     Int?
+  host_teff     Float?
+  host_spectype String?
+  star_rad_rsun Float?
+  insol_earth   Float?
+
+  @@map("exo_planets")
+}

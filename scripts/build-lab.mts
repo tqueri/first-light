@@ -1,7 +1,7 @@
 /**
  * Builds the Lab's layer sets from raw MAST preview frames.
  *
- *   pnpm lab:build            (needs DATABASE_URL or the local embedded Postgres)
+ *   pnpm lab:build            (needs POSTGRES_URL or the local embedded Postgres)
  *
  * For each curated observation set: download every filter's level-3 `_i2d.jpg`
  * preview (cached in .cache/lab), register all layers onto the highest-resolution
@@ -12,8 +12,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import pg from "pg";
 import sharp from "sharp";
+import { db } from "../src/lib/db.ts";
 import { ESA_COLORS, PIVOT_UM } from "../src/lib/lab/filters.ts";
 
 const ROOT = process.cwd();
@@ -486,7 +486,7 @@ function maxRect(bad: Uint8Array, W: number, H: number) {
 
 fs.mkdirSync(CACHE, { recursive: true });
 fs.mkdirSync(OUT, { recursive: true });
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2 });
+const prisma = db();
 const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
 const manifestPath = path.join(OUT, "manifest.json");
 const prev = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : { datasets: [] };
@@ -499,20 +499,24 @@ for (const ds of DATASETS) {
     continue;
   }
   console.log(`\n▶ ${ds.slug}`);
-  const { rows } = await pool.query<{
+  const rows = (
+    await prisma.product.findMany({
+      where: { product_type: "image", jpeg_url: { not: null }, obs_id: { startsWith: ds.obsPrefix } },
+      select: { obs_id: true, jpeg_url: true, instrument: true, t_min: true, proposal_id: true, title: true, proposal_pi: true },
+      orderBy: { em_min: "asc" },
+    })
+  )
+    // `<prefix>_…` exactly (a bare startsWith would also match jw02731-o001x…)
+    .filter((r) => r.obs_id.startsWith(ds.obsPrefix + "_")) as {
     obs_id: string; jpeg_url: string; instrument: string; t_min: number; proposal_id: number; title: string; proposal_pi: string;
-  }>(
-    `select obs_id, jpeg_url, instrument, t_min, proposal_id, title, proposal_pi from products
-     where product_type = 'image' and jpeg_url is not null and obs_id like $1 order by em_min`,
-    [ds.obsPrefix + "\\_%"],
-  );
+  }[];
   if (rows.length === 0) { console.warn("  no products"); continue; }
 
   // ESA official palette
   const esa: Record<string, string> = {};
   if (ds.esaId) {
-    const g = await pool.query<{ filters: { color: string; wavelength: string }[] }>(`select filters from gallery_images where id = $1`, [ds.esaId]);
-    const fl = g.rows[0]?.filters ?? [];
+    const g = await prisma.galleryImage.findUnique({ where: { id: ds.esaId }, select: { filters: true } });
+    const fl = (g?.filters ?? []) as { color: string; wavelength: string }[];
     const names = rows.map((r) => filterName(r.obs_id)!).filter(Boolean);
     for (const f of fl) {
       let um: number;
@@ -713,4 +717,4 @@ const ordered = DATASETS.map((d) => results.find((r) => r.slug === d.slug)).filt
 fs.writeFileSync(manifestPath, JSON.stringify({ generated: new Date().toISOString(), datasets: ordered }, null, 2));
 const total = ordered.reduce((s, d) => s + ((d as { bytes: number }).bytes ?? 0), 0);
 console.log(`\nmanifest: ${ordered.length} datasets, ${(total / 1e6).toFixed(1)} MB total`);
-await pool.end();
+await prisma.$disconnect();

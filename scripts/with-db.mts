@@ -1,15 +1,16 @@
 /**
- * Runs a command with a Postgres available at DATABASE_URL.
+ * Runs a command with a Postgres available at POSTGRES_URL.
  *
- * - If DATABASE_URL is set (e.g. Neon in .env.local), it is used as-is.
- * - Otherwise an embedded Postgres is booted from ./.data/pg (or reused if
- *   another `with-db` process already started it).
- * - The schema is applied (idempotent) before the command runs.
+ * - POSTGRES_URL comes from .env.local / .env (default: the local embedded Postgres).
+ * - If it points at the embedded Postgres (127.0.0.1:54329), that server is booted from
+ *   ./.data/pg, or reused if another `with-db` process already started it.
+ * - Any other URL (Neon, Prisma Postgres…) is used as-is.
+ * - Prisma migrations are applied (`prisma migrate deploy`) before the command runs.
  *
  *   tsx scripts/with-db.mts next dev
  */
 import EmbeddedPostgres from "embedded-postgres";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
@@ -19,6 +20,7 @@ const PORT = 54329;
 const DB = "firstlight";
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, ".data", "pg");
+const LOCAL_URL = `postgresql://postgres:postgres@127.0.0.1:${PORT}/${DB}`;
 
 for (const f of [".env.local", ".env"]) {
   const p = path.join(ROOT, f);
@@ -36,6 +38,11 @@ function portOpen(port: number): Promise<boolean> {
   });
 }
 
+function isEmbedded(url: string) {
+  const u = new URL(url);
+  return ["127.0.0.1", "localhost"].includes(u.hostname) && Number(u.port) === PORT;
+}
+
 async function bootEmbedded(): Promise<EmbeddedPostgres | null> {
   if (await portOpen(PORT)) {
     console.log(`[db] reusing embedded Postgres already running on :${PORT}`);
@@ -49,6 +56,8 @@ async function bootEmbedded(): Promise<EmbeddedPostgres | null> {
     persistent: true,
     // Windows defaults to WIN1252; force UTF-8 (μm, Greek letters, accented names…).
     initdbFlags: ["--encoding=UTF8", "--locale=C"],
+    // initdb copies the OS time zone (America/New_York here); Prisma's pg adapter needs UTC sessions.
+    postgresFlags: ["-c", "timezone=UTC"],
     onLog: () => {},
     onError: () => {},
   });
@@ -67,7 +76,7 @@ async function bootEmbedded(): Promise<EmbeddedPostgres | null> {
       await instance.start();
     } else throw err;
   }
-  const admin = new pg.Client({ connectionString: `postgres://postgres:postgres@127.0.0.1:${PORT}/postgres` });
+  const admin = new pg.Client({ connectionString: `postgresql://postgres:postgres@127.0.0.1:${PORT}/postgres` });
   await admin.connect();
   const exists = await admin.query("select 1 from pg_database where datname = $1", [DB]);
   if (exists.rowCount === 0) {
@@ -78,20 +87,33 @@ async function bootEmbedded(): Promise<EmbeddedPostgres | null> {
   return instance;
 }
 
+function prisma(args: string[], url: string) {
+  const r = spawnSync(`prisma ${args.join(" ")}`, {
+    stdio: "inherit",
+    shell: true,
+    env: { ...process.env, POSTGRES_URL: url },
+  });
+  if (r.status !== 0) throw new Error(`prisma ${args.join(" ")} failed (exit ${r.status})`);
+}
+
+/** Apply Prisma migrations. A database created by the old db/schema.sql is baselined first, not recreated. */
 async function migrate(url: string) {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
-  await client.query(fs.readFileSync(path.join(ROOT, "db", "schema.sql"), "utf8"));
+  const { rows } = await client.query<{ legacy: boolean; prisma: boolean }>(
+    `select to_regclass('public.products') is not null as legacy, to_regclass('public._prisma_migrations') is not null as prisma`,
+  );
   await client.end();
+  if (rows[0].legacy && !rows[0].prisma) {
+    console.log("[db] existing schema without Prisma history: marking 0_init as applied (no data touched)");
+    prisma(["migrate", "resolve", "--applied", "0_init"], url);
+  }
+  prisma(["migrate", "deploy"], url);
 }
 
 const [cmd, ...args] = process.argv.slice(2);
-let instance: EmbeddedPostgres | null = null;
-let url = process.env.DATABASE_URL;
-if (!url) {
-  instance = await bootEmbedded();
-  url = `postgres://postgres:postgres@127.0.0.1:${PORT}/${DB}`;
-}
+const url = process.env.POSTGRES_URL || LOCAL_URL;
+const instance = isEmbedded(url) ? await bootEmbedded() : null;
 await migrate(url);
 
 let stopping = false;
@@ -109,7 +131,7 @@ async function shutdown(code: number) {
 }
 
 if (!cmd) {
-  console.log("[db] schema applied. Holding Postgres open — Ctrl+C to stop.");
+  console.log("[db] migrations applied. Holding Postgres open — Ctrl+C to stop.");
   process.on("SIGINT", () => shutdown(0));
   process.on("SIGTERM", () => shutdown(0));
   setInterval(() => {}, 1 << 30);
@@ -117,7 +139,7 @@ if (!cmd) {
   const child = spawn([cmd, ...args].join(" "), {
     stdio: "inherit",
     shell: true,
-    env: { ...process.env, DATABASE_URL: url },
+    env: { ...process.env, POSTGRES_URL: url },
   });
   process.on("SIGINT", () => child.kill("SIGINT"));
   process.on("SIGTERM", () => child.kill("SIGTERM"));

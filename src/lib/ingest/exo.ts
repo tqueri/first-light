@@ -5,7 +5,7 @@
  * The archive serves spectrum files only from a per-session "workspace" folder,
  * so we mint a workspace token once (and re-mint on 404).
  */
-import type { Pool } from "pg";
+import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 
 const HOST = "https://exoplanetarchive.ipac.caltech.edu";
 const TAP = `${HOST}/TAP/sync`;
@@ -192,11 +192,11 @@ export function parseSpectrum(text: string, specType: string): ParsedSpectrum | 
   return { header, points, unit, kind, derived, skippedLimits };
 }
 
-export async function ingestSpectra(pool: Pool, log: (s: string) => void = console.log) {
+export async function ingestSpectra(db: PrismaClient, log: (s: string) => void = console.log) {
   const list = await listJwstSpectra();
   log(`[exo] ${list.length} JWST transmission/eclipse spectra listed`);
   const done = new Set(
-    (await pool.query<{ id: string }>(`select id from exo_spectra where points is not null`)).rows.map((r) => r.id),
+    (await db.exoSpectrum.findMany({ where: { points: { not: Prisma.DbNull } }, select: { id: true } })).map((r) => r.id),
   );
   const ws = new Workspace();
   let ok = 0;
@@ -215,32 +215,27 @@ export async function ingestSpectra(pool: Pool, log: (s: string) => void = conso
         continue;
       }
       const wls = parsed.points.map((p) => p[0]);
-      await pool.query(
-        `insert into exo_spectra (id, planet, spec_type, instrument, authors, bibcode, note, min_wl, max_wl, points,
-           value_unit, n_points, reference, value_kind, derived)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-         on conflict (id) do update set planet=excluded.planet, spec_type=excluded.spec_type, instrument=excluded.instrument,
-           authors=excluded.authors, bibcode=excluded.bibcode, note=excluded.note, min_wl=excluded.min_wl,
-           max_wl=excluded.max_wl, points=excluded.points, value_unit=excluded.value_unit, n_points=excluded.n_points,
-           reference=excluded.reference, value_kind=excluded.value_kind, derived=excluded.derived, ingested_at=now()`,
-        [
-          s.spec_path,
-          s.pl_name,
-          s.spec_type,
-          s.instrument,
-          s.authors,
-          s.bibcode,
-          s.note && s.note !== "None" ? s.note : null,
-          Math.min(...wls),
-          Math.max(...wls),
-          JSON.stringify(parsed.points),
-          parsed.unit,
-          parsed.points.length,
-          parsed.header.REFERENCE ?? s.authors,
-          parsed.kind,
-          parsed.derived,
-        ],
-      );
+      const data = {
+        planet: s.pl_name,
+        spec_type: s.spec_type,
+        instrument: s.instrument,
+        authors: s.authors,
+        bibcode: s.bibcode,
+        note: s.note && s.note !== "None" ? s.note : null,
+        min_wl: Math.min(...wls),
+        max_wl: Math.max(...wls),
+        points: parsed.points,
+        value_unit: parsed.unit,
+        n_points: parsed.points.length,
+        reference: parsed.header.REFERENCE ?? s.authors,
+        value_kind: parsed.kind,
+        derived: parsed.derived,
+      };
+      await db.exoSpectrum.upsert({
+        where: { id: s.spec_path },
+        create: { id: s.spec_path, ...data },
+        update: { ...data, ingested_at: new Date() },
+      });
       ok++;
       if (i % 20 === 0) log(`  ${i + 1}/${list.length} ${s.pl_name} (${parsed.points.length} pts, ${parsed.kind})`);
     } catch (e) {
@@ -267,8 +262,8 @@ type PlanetRow = {
   pl_insol: number | null;
 };
 
-export async function ingestPlanets(pool: Pool, log: (s: string) => void = console.log) {
-  const names = (await pool.query<{ planet: string }>(`select distinct planet from exo_spectra`)).rows.map((r) => r.planet);
+export async function ingestPlanets(db: PrismaClient, log: (s: string) => void = console.log) {
+  const names = (await db.exoSpectrum.findMany({ distinct: ["planet"], select: { planet: true } })).map((r) => r.planet);
   let stored = 0;
   for (let i = 0; i < names.length; i += 40) {
     const batch = names.slice(i, i + 40);
@@ -278,17 +273,20 @@ export async function ingestPlanets(pool: Pool, log: (s: string) => void = conso
        from pscomppars where pl_name in (${inList})`,
     );
     for (const p of rows) {
-      await pool.query(
-        `insert into exo_planets (name, host, radius_re, mass_me, period_days, eq_temp_k, distance_pc, disc_year,
-           host_teff, host_spectype, star_rad_rsun, insol_earth)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-         on conflict (name) do update set host=excluded.host, radius_re=excluded.radius_re, mass_me=excluded.mass_me,
-           period_days=excluded.period_days, eq_temp_k=excluded.eq_temp_k, distance_pc=excluded.distance_pc,
-           disc_year=excluded.disc_year, host_teff=excluded.host_teff, host_spectype=excluded.host_spectype,
-           star_rad_rsun=excluded.star_rad_rsun, insol_earth=excluded.insol_earth`,
-        [p.pl_name, p.hostname, p.pl_rade, p.pl_bmasse, p.pl_orbper, p.pl_eqt, p.sy_dist, p.disc_year, p.st_teff,
-         p.st_spectype, p.st_rad, p.pl_insol],
-      );
+      const data = {
+        host: p.hostname,
+        radius_re: p.pl_rade,
+        mass_me: p.pl_bmasse,
+        period_days: p.pl_orbper,
+        eq_temp_k: p.pl_eqt,
+        distance_pc: p.sy_dist,
+        disc_year: p.disc_year,
+        host_teff: p.st_teff,
+        host_spectype: p.st_spectype,
+        star_rad_rsun: p.st_rad,
+        insol_earth: p.pl_insol,
+      };
+      await db.exoPlanet.upsert({ where: { name: p.pl_name }, create: { name: p.pl_name, ...data }, update: data });
       stored++;
     }
   }

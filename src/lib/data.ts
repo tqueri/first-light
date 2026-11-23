@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { sql } from "./db";
+import { db, sql } from "./db";
 
 export { INSTRUMENTS, instrumentOf } from "./instruments";
 import { displayTarget } from "./sky-math";
@@ -161,9 +161,13 @@ export async function getGalleryImage(id: string): Promise<GalleryImage | null> 
   "use cache";
   cacheLife("days");
   cacheTag("gallery");
-  const [r] = await sql<GalleryImage & { release_date: Date | null }>(`select * from gallery_images where id = $1`, [id]);
+  const r = await db().galleryImage.findUnique({ where: { id } });
   if (!r) return null;
-  return { ...r, release_date: r.release_date ? new Date(r.release_date).toISOString() : null };
+  return {
+    ...r,
+    filters: r.filters as GalleryImage["filters"],
+    release_date: r.release_date ? r.release_date.toISOString() : null,
+  } as GalleryImage;
 }
 
 /** Raw MAST image products near a sky position (for "the raw data behind this image"). */
@@ -278,7 +282,10 @@ export async function getGalleryRefs(ids: string[]): Promise<Record<string, Gall
   "use cache";
   cacheLife("days");
   cacheTag("gallery");
-  const rows = await sql<GalleryRef>(`select id, title, credit, width, height from gallery_images where id = any($1)`, [ids]);
+  const rows: GalleryRef[] = await db().galleryImage.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, title: true, credit: true, width: true, height: true },
+  });
   return Object.fromEntries(rows.map((r) => [r.id, r]));
 }
 
@@ -321,7 +328,10 @@ export async function searchArchive(query: ArchiveQuery): Promise<ArchiveResult>
     where.push(`instrument ilike $${args.length}`);
   }
   const w = where.length ? `where ${where.join(" and ")}` : "";
-  const order = query.sort === "released" ? "release_mjd desc nulls last, t_min desc" : "t_min desc nulls last";
+  // obsid breaks ties: products from one exposure (MIRI IFU channels, NIRSpec MOS sources…) share t_min,
+  // and without a total order LIMIT/OFFSET pages can repeat or skip rows.
+  const order =
+    query.sort === "released" ? "release_mjd desc nulls last, t_min desc, obsid desc" : "t_min desc nulls last, obsid desc";
   const page = Number.isFinite(query.page) ? Math.min(Math.max(1, Math.floor(query.page)), 5000) : 1;
   const offset = (page - 1) * ARCHIVE_PAGE_SIZE;
   const [rows, [{ total }], programs] = await Promise.all([
